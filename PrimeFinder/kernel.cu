@@ -83,24 +83,27 @@ int main(){
 		for (i = 0; i <= page; i++) {
 			//GPUに演算を投げる
 			Device_PrimeChk << <1, table_size >> > (search, Device_table[i], flag);
-			cudaDeviceSynchronize();
-			cudaMemcpy(&Host_flag, flag, 2, cudaMemcpyDeviceToHost);
-			if (Host_flag != f) {
-				search++;
-				chk = true;
-				cudaMemcpy(flag, (void**)&f, 2, cudaMemcpyHostToDevice);
-				continue;
-			}
 		}
-		if (chk == false) {
+		//演算結果取得
+		cudaDeviceSynchronize();
+		cudaMemcpy(&Host_flag, flag, 2, cudaMemcpyDeviceToHost);
+
+		if (Host_flag == f) {//素数の場合の処理
 			if (index == table_size) {
+				//ページがいっぱいの場合は次のページに進む
 				index = 0;
 				page++;
 			}
+			//素数を標準出力に出して次を探す
 			printf("%ld\n", search);
 			cudaMemcpy(&Device_table[page][index], &search, 8, cudaMemcpyHostToDevice);
 			index++;
 			search++;
+		}
+		else {
+			//素数ではなかった場合の処理
+			search++;
+			cudaMemcpy(flag, (void**)&f, 2, cudaMemcpyHostToDevice);
 		}
 	}
 }
